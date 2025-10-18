@@ -109,10 +109,12 @@ impl Config {
         Ok(Config {
             server: ServerConfig {
                 host: env::var("SERVER_HOST").unwrap_or_else(|_| "0.0.0.0".to_string()),
-                port: env::var("SERVER_PORT")
+                // Render uses PORT env var, fallback to SERVER_PORT, then 8080
+                port: env::var("PORT")
+                    .or_else(|_| env::var("SERVER_PORT"))
                     .unwrap_or_else(|_| "8080".to_string())
                     .parse()
-                    .map_err(|e| format!("Invalid SERVER_PORT: {}", e))?,
+                    .map_err(|e| format!("Invalid PORT: {}", e))?,
             },
             database: DatabaseConfig {
                 url: env::var("DATABASE_URL").map_err(|_| "DATABASE_URL not set".to_string())?,
