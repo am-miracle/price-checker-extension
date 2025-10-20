@@ -3,36 +3,49 @@ import LinkIcon from "../icons/link";
 import MotorcycleIcon from "../icons/motorcycle";
 import { ScrollArea } from "../ui/scroll-area";
 import type { Item } from "@/type/item";
+import { useState } from "react";
 
 interface AllItemProps {
   item: Item;
 }
 
 const AllItem = () => {
-  return ( 
+  return (
     <ScrollArea className="h-[50vh] mb-3.5">
       <div className="flex flex-col">
         {mockPriceData.map((item) => (
-          <Item key={item.id} item={item}/>
+          <Item key={item.title} item={item} />
         ))}
       </div>
     </ScrollArea>
   );
 };
 
-const Item = ({item}:AllItemProps) => {
+const Item = ({ item }: AllItemProps) => {
+  const [imageError, setImageError] = useState<boolean>(false);
   return (
     <div className="flex items-center justify-between border-b border-gray-200 p-3">
       <div className="flex items-center gap-x-2">
-        <div className="h-12.5 w-12.5 flex shrink-0 items-center justify-center bg-[#CEBAF8] rounded-lg text-xl font-semibold">
-          {item.platform.charAt(0)}
-        </div>
+        {!imageError && item.image ? (
+          <img
+            src={item.image}
+            alt="item"
+            className="h-12.5 w-12.5 border object-cover"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <div className="h-12.5 w-12.5 flex shrink-0 items-center justify-center bg-[#CEBAF8] rounded-lg text-xl font-semibold">
+            {item.site.charAt(0)}
+          </div>
+        )}
         <div className="flex items-end gap-x-3">
           <div className="flex flex-col">
             <p className="text-lg font-normal leading-6.5 text-[#343434]">
-              {item.platform}
+              {item.site}
             </p>
-            <p className="text-[#121212] font-medium text-xl leading-7">${item.price.toLocaleString()}</p>
+            <p className="text-[#121212] font-medium text-xl leading-7">
+              ${item.price.toLocaleString()}
+            </p>
           </div>
           <div className="flex items-center gap-x-1">
             <MotorcycleIcon />

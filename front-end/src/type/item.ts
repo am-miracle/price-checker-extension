@@ -1,16 +1,10 @@
 export type Item = {
-  id: number;
-  platform: string;
-  productName: string;
-  price: number;
-  oldPrice?: number;
-  image?: string;
-  timeAgo?: string;
-  shipping?: string;
-  delivery?: string;
-  trackedSince?: string;
-  status?: "Open" | "Opening" | "Tracked";
-  actionLabel?: string;
-  color?: string;
-  link?: string;
+  site: string;
+  title: string;
+  price: string;
+  currency: string;
+  price_usd: string;
+  link: string;
+  image: string;
+  match_confidence: number;
 };
