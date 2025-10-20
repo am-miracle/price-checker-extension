@@ -31,7 +31,7 @@ const AlertItem = () => {
             </span>
             <p className="text-black font-medium text-xl leading-6">$249.99</p>
           </div>
-          <a href="" className="bg-[#6041B1] w-full rounded-xl p-2.5 text-[#E8E6EC] font-normal text-base leading-6 flex items-center justify-center gap-x-2">
+          <a href="" target="_blank" className="bg-[#6041B1] w-full rounded-xl p-2.5 text-[#E8E6EC] font-normal text-base leading-6 flex items-center justify-center gap-x-2">
             <span>View Deal</span>
             <LinkIcon />
           </a>
