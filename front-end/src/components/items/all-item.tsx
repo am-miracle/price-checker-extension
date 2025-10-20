@@ -13,8 +13,8 @@ const AllItem = () => {
   return (
     <ScrollArea className="h-[50vh] mb-3.5">
       <div className="flex flex-col">
-        {mockPriceData.map((item) => (
-          <Item key={item.title} item={item} />
+        {mockPriceData.map((item,index) => (
+          <Item key={index} item={item} />
         ))}
       </div>
     </ScrollArea>

@@ -1,15 +1,28 @@
-import { useState } from "react";
-import type { Item as ItemType } from "@/type/item";
-import CloseIcon from "../icons/x";
+import { alertsMockData } from "@/data/data";
 import LinkIcon from "../icons/link";
+import CloseIcon from "../icons/x";
+import { ScrollArea } from "../ui/scroll-area";
+import type { Item } from "@/type/item";
+import { useState } from "react";
 
 interface AlertItemProps {
-  item: ItemType;
+  item: Item;
 }
 
-const Item = ({ item }: AlertItemProps) => {
-  const [imageError, setImageError] = useState<boolean>(false);
+const AlertItem = () => {
+  return (
+    <ScrollArea className="h-[50vh] mb-3.5">
+      <div className="flex flex-col">
+        {alertsMockData.map((item) => (
+          <Item key={item.title} item={item} />
+        ))}
+      </div>
+    </ScrollArea>
+  );
+};
 
+const Item = ({ item }: AlertItemProps) => {
+    const [imageError, setImageError] = useState<boolean>(false);
   return (
     <div className="flex justify-between border-b border-gray-200 p-3">
       <div className="flex items-start gap-x-2 w-full">
@@ -18,8 +31,8 @@ const Item = ({ item }: AlertItemProps) => {
           {!imageError && item.image ? (
             <img
               src={item.image}
-              alt={item.title}
-              className="h-17.5 w-17.5 border object-cover rounded-lg"
+              alt="item"
+              className="h-17.5 w-17.5 border object-cover"
               onError={() => setImageError(true)}
             />
           ) : (
@@ -28,7 +41,6 @@ const Item = ({ item }: AlertItemProps) => {
             </div>
           )}
         </div>
-
         <div className="flex flex-col gap-y-2 w-full">
           <div className="flex justify-between">
             <div className="flex flex-col">
@@ -43,18 +55,14 @@ const Item = ({ item }: AlertItemProps) => {
               <CloseIcon size={12} color="#666666" />
             </button>
           </div>
-
           <div className="flex items-center gap-x-2">
             <span className="line-through text-[#888888] text-xs font-normal">
-              {item?.price_usd
-                ? `$${Number(item.price_usd).toLocaleString()}`
-                : "$299.99"}
+              {item?.price ? `$${item?.price_usd.toLocaleString()}` : "$299.99"}
             </span>
             <p className="text-black font-medium text-xl leading-6">
-              ${item.price}
+              {item.price}
             </p>
           </div>
-
           <a
             href={item.link}
             target="_blank"
@@ -63,10 +71,13 @@ const Item = ({ item }: AlertItemProps) => {
             <span>View Deal</span>
             <LinkIcon />
           </a>
+          <p className="text-[#818181] text-xs font-normal leading-5">
+            {/* {item?.timeAgo ?? "--"} */}
+          </p>
         </div>
       </div>
     </div>
   );
 };
 
-export default Item;
+export default AlertItem;
