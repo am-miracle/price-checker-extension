@@ -1,6 +1,32 @@
-version: '3.8'
+version: "3.8"
 
 services:
+  # Application Service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: price_checker_app
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/price_checker
+      REDIS_URL: redis://redis:6379
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 8080
+      RUST_LOG: info,price_checker_extension=debug
+      LOG_FORMAT: json
+      SERVICE_NAME: price-checker-extension
+      ENVIRONMENT: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - price_checker_network
+
+  # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
     container_name: price_checker_db
@@ -17,7 +43,10 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - price_checker_network
 
+  # Redis Cache
   redis:
     image: redis:7-alpine
     container_name: price_checker_redis
@@ -31,9 +60,58 @@ services:
       timeout: 3s
       retries: 5
     command: redis-server --appendonly yes
+    networks:
+      - price_checker_network
+
+  # Prometheus Metrics Collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: price_checker_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--web.enable-lifecycle"
+    networks:
+      - price_checker_network
+    depends_on:
+      - app
+
+  # Grafana Dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: price_checker_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./observability/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./observability/grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - price_checker_network
+    depends_on:
+      - prometheus
 
 volumes:
   postgres_data:
     driver: local
   redis_data:
     driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  price_checker_network:
+    driver: bridge

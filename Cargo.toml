@@ -8,6 +8,9 @@ axum = "0.8.5"
 chrono = { version = "0.4.38", features = ["serde"] }
 deadpool-redis = { version = "0.22.0", features = ["rt_tokio_1"] }
 dotenvy = "0.15.7"
+# Observability - Metrics & Monitoring
+metrics = "0.24.0"
+metrics-exporter-prometheus = "0.14.0"
 rand = "0.8.5"
 redis = { version = "0.32.6", features = ["tokio-rustls-comp"] }
 reqwest = { version = "0.12.9", features = ["json"] }

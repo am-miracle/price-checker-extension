@@ -387,7 +387,7 @@ pub fn detect_currency(price_str: &str, site_hint: Option<&str>) -> Currency {
     // Use site hint if available
     if let Some(site) = site_hint {
         let site_lower = site.to_lowercase();
-        if site_lower.contains("jumia") || site_lower.contains("konga") {
+        if site_lower.contains("jumia.com.ng") || site_lower.contains("konga") {
             return Currency::NGN;
         }
         if site_lower.contains("amazon.co.uk") || site_lower.contains("ebay.co.uk") {
