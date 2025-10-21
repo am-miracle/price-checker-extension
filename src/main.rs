@@ -14,6 +14,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load environment variables from .env file
     dotenvy::dotenv().ok();
 
+    // Initialize rustls crypto provider (required for HTTPS requests)
+    // This must be called before any HTTPS connections are made
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .map_err(|_| "Failed to install rustls crypto provider")?;
+
     // Initialize observability (tracing and metrics)
     observability::init_tracing()?;
     observability::init_metrics();
