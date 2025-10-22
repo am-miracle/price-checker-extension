@@ -33,9 +33,7 @@ const EXCHANGE_RATE_API = "https://api.exchangerate-api.com/v4/latest/USD";
 
 let cachedRates: ExchangeRateCache | null = null;
 
-/**
- * Fetch live exchange rates from API
- */
+// Fetch live exchange rates from API
 async function fetchExchangeRates(): Promise<Record<string, number>> {
   try {
     // Check cache first

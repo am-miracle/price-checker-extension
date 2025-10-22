@@ -73,11 +73,10 @@ function handleExtractProduct(sendResponse: (response: any) => void) {
   }
 }
 
-// Optional: Send notification when page loads if it's a supported site
+//Send notification when page loads if it's a supported site
 if (isSupportedProductPage()) {
   console.log("[Content Script] Supported product page detected");
 
-  // You can optionally badge the extension icon or send a notification
   chrome.runtime
     .sendMessage({
       action: "productPageDetected",
