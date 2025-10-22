@@ -63,6 +63,7 @@ pub fn create_router(state: Arc<AppState>, metrics_handle: PrometheusHandle) -> 
             "/api/compare",
             get(compare_handler).post(compare_post_handler),
         )
+        .route("/api/currencies", get(currencies_handler))
         .with_state(state)
 }
 
@@ -159,6 +160,72 @@ async fn compare_handler(
     Ok(Json(result))
 }
 
+/// Currency information response.
+#[derive(Serialize)]
+pub struct CurrencyInfo {
+    pub code: String,
+    pub symbol: String,
+    pub name: String,
+}
+
+/// Currencies list response.
+#[derive(Serialize)]
+pub struct CurrenciesResponse {
+    pub currencies: Vec<CurrencyInfo>,
+}
+
+/// Currencies endpoint - returns list of supported currencies.
+///
+/// GET /api/currencies
+async fn currencies_handler() -> Json<CurrenciesResponse> {
+    use crate::services::currency::Currency;
+
+    let currencies = vec![
+        CurrencyInfo {
+            code: Currency::USD.code().to_string(),
+            symbol: Currency::USD.symbol().to_string(),
+            name: "US Dollar".to_string(),
+        },
+        CurrencyInfo {
+            code: Currency::EUR.code().to_string(),
+            symbol: Currency::EUR.symbol().to_string(),
+            name: "Euro".to_string(),
+        },
+        CurrencyInfo {
+            code: Currency::GBP.code().to_string(),
+            symbol: Currency::GBP.symbol().to_string(),
+            name: "British Pound".to_string(),
+        },
+        CurrencyInfo {
+            code: Currency::NGN.code().to_string(),
+            symbol: Currency::NGN.symbol().to_string(),
+            name: "Nigerian Naira".to_string(),
+        },
+        CurrencyInfo {
+            code: Currency::INR.code().to_string(),
+            symbol: Currency::INR.symbol().to_string(),
+            name: "Indian Rupee".to_string(),
+        },
+        CurrencyInfo {
+            code: Currency::CAD.code().to_string(),
+            symbol: Currency::CAD.symbol().to_string(),
+            name: "Canadian Dollar".to_string(),
+        },
+        CurrencyInfo {
+            code: Currency::AUD.code().to_string(),
+            symbol: Currency::AUD.symbol().to_string(),
+            name: "Australian Dollar".to_string(),
+        },
+        CurrencyInfo {
+            code: Currency::JPY.code().to_string(),
+            symbol: Currency::JPY.symbol().to_string(),
+            name: "Japanese Yen".to_string(),
+        },
+    ];
+
+    Json(CurrenciesResponse { currencies })
+}
+
 /// Product comparison endpoint with detailed identifiers (POST).
 ///
 /// Accepts detailed product information including identifiers (UPC, ASIN, model)
@@ -195,8 +262,14 @@ async fn compare_post_handler(
     }
 
     // Cache miss - fetch fresh data with identifiers
-    let result =
-        services::compare_with_identifiers(&request.identifiers, search_query, &state).await?;
+    let target_currency = request.target_currency.as_deref();
+    let result = services::compare_with_identifiers(
+        &request.identifiers,
+        search_query,
+        &state,
+        target_currency,
+    )
+    .await?;
 
     // Cache the result
     if let Err(e) = cache::set_cached_result(

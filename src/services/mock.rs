@@ -41,6 +41,8 @@ pub fn generate_mock_price(item: &str, site: &str) -> Result<SitePrice, AppError
         price: price_decimal,
         currency: "USD".to_string(), // Mock data defaults to USD
         price_usd: price_decimal,    // Same as price for mock USD data
+        price_converted: None,
+        target_currency: None,
         link: format!(
             "https://www.{}.com/product/{}",
             site.to_lowercase(),

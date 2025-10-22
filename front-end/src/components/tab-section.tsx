@@ -1,31 +1,37 @@
-import AlertsTabs from "./tabs/alerts-tabs";
 import AllTabs from "./tabs/all-tabs";
 import TrackedTabs from "./tabs/tracked-tabs";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import type { PriceComparisonResult, ProductMatchRequest } from "@/type/item";
 
-const TabSection = () => {
-  const tabs = [
-    { value: "all", label: "All", component: <AllTabs /> },
-    { value: "tracked", label: "Tracked", component: <TrackedTabs /> },
-    { value: "alerts", label: "Alerts", component: <AlertsTabs /> },
-  ];
+interface TabSectionProps {
+  priceData: {
+    data: PriceComparisonResult | null;
+    loading: boolean;
+    error: string | null;
+    isSupported: boolean;
+    currentSite: string | null;
+    extractedProduct: ProductMatchRequest | null;
+    refresh: () => Promise<void>;
+  };
+  searchQuery: string;
+}
 
+const TabSection = ({ priceData, searchQuery }: TabSectionProps) => {
   return (
-    <section>
-      <Tabs defaultValue="all" className="w-full">
-        <TabsList className="border-y border-[#E0E0E0] w-full">
-          {tabs.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value}>
-              {tab.label}
-            </TabsTrigger>
-          ))}
+    <section className="h-full flex flex-col">
+      <Tabs defaultValue="all" className="w-full h-full flex flex-col">
+        <TabsList className="border-b border-[#E0E0E0] w-full flex-shrink-0">
+          <TabsTrigger value="all">All Prices</TabsTrigger>
+          <TabsTrigger value="tracked">Tracked</TabsTrigger>
         </TabsList>
 
-        {tabs.map((tab) => (
-          <TabsContent key={tab.value} value={tab.value} className="">
-            <div>{tab.component}</div>
-          </TabsContent>
-        ))}
+        <TabsContent value="all" className="flex-1 overflow-hidden m-0 p-0">
+          <AllTabs priceData={priceData} searchQuery={searchQuery} />
+        </TabsContent>
+
+        <TabsContent value="tracked" className="flex-1 overflow-hidden m-0 p-0">
+          <TrackedTabs searchQuery={searchQuery} />
+        </TabsContent>
       </Tabs>
     </section>
   );

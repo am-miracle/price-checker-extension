@@ -15,6 +15,8 @@ pub struct ProductIdentifiers {
     pub asin: Option<String>,
     /// eBay Item Number
     pub ebay_item_id: Option<String>,
+    /// Manufacturer Part Number
+    pub mpn: Option<String>,
     /// Manufacturer model number
     pub model_number: Option<String>,
     /// Product brand name
@@ -36,6 +38,8 @@ pub struct ProductMatchRequest {
     pub current_site: Option<String>,
     /// Product URL from the current page
     pub url: Option<String>,
+    /// Target currency for price conversion (optional)
+    pub target_currency: Option<String>,
     /// Product identifiers
     #[serde(default)]
     pub identifiers: ProductIdentifiers,
@@ -52,6 +56,12 @@ pub struct SitePrice {
     pub currency: String,
     /// Price converted to USD for comparison
     pub price_usd: Decimal,
+    /// Price converted to target currency (if requested)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub price_converted: Option<Decimal>,
+    /// Target currency code (if conversion was requested)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub target_currency: Option<String>,
     pub link: String,
     pub image: Option<String>,
     /// Match confidence score (0-100), where 100 is exact match
@@ -76,10 +86,19 @@ impl SitePrice {
             price,
             currency,
             price_usd,
+            price_converted: None,
+            target_currency: None,
             link,
             image,
             match_confidence,
         }
+    }
+
+    /// Sets the converted price and target currency.
+    pub fn with_conversion(mut self, price_converted: Decimal, target_currency: String) -> Self {
+        self.price_converted = Some(price_converted);
+        self.target_currency = Some(target_currency);
+        self
     }
 }
 
