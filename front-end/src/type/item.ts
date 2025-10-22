@@ -8,3 +8,8 @@ export type Item = {
   image: string;
   match_confidence: number;
 };
+
+export interface CompareResponse {
+  best_deal: Item;
+  all_prices: Item[];
+}

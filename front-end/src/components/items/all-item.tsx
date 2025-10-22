@@ -4,16 +4,20 @@ import MotorcycleIcon from "../icons/motorcycle";
 import { ScrollArea } from "../ui/scroll-area";
 import type { Item } from "@/type/item";
 import { useState } from "react";
+import { useCompare } from "@/context/compare-context";
 
 interface AllItemProps {
   item: Item;
 }
 
 const AllItem = () => {
+  const { data } = useCompare();
+  const allPrices = data?.all_prices;
+  console.log("AllTabs context data:", data);
   return (
     <ScrollArea className="h-[50vh] mb-3.5">
       <div className="flex flex-col">
-        {mockPriceData.map((item,index) => (
+        {allPrices?.map((item, index) => (
           <Item key={index} item={item} />
         ))}
       </div>
@@ -44,7 +48,11 @@ const Item = ({ item }: AllItemProps) => {
               {item.site}
             </p>
             <p className="text-[#121212] font-medium text-xl leading-7">
-              ${item.price.toLocaleString()}
+              {new Intl.NumberFormat("en-NG", {
+                style: "currency",
+                currency: item.currency || "NGN",
+                maximumFractionDigits: 0,
+              }).format(Number(item.price))}
             </p>
           </div>
           <div className="flex items-center gap-x-1">

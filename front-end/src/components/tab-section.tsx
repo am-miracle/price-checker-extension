@@ -5,9 +5,27 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 
 const TabSection = () => {
   const tabs = [
-    { value: "all", label: "All", component: <AllTabs /> },
-    { value: "tracked", label: "Tracked", component: <TrackedTabs /> },
-    { value: "alerts", label: "Alerts", component: <AlertsTabs /> },
+    {
+      value: "all",
+      label: "All",
+      component: (
+        <AllTabs />
+      ),
+    },
+    {
+      value: "tracked",
+      label: "Tracked",
+      component: (
+        <TrackedTabs />
+      ),
+    },
+    {
+      value: "alerts",
+      label: "Alerts",
+      component: (
+        <AlertsTabs />
+      ),
+    },
   ];
 
   return (
