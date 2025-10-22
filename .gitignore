@@ -21,3 +21,5 @@ target
 #.idea/
 
 .env
+.DS_Store
+/front-end/.DS_Store

@@ -44,7 +44,9 @@ const CurrencySelector = ({ onCurrencyChange }: CurrencySelectorProps) => {
     }
   };
 
-  const selectedCurrencyInfo = CURRENCIES.find(c => c.code === selectedCurrency);
+  const selectedCurrencyInfo = CURRENCIES.find(
+    (c) => c.code === selectedCurrency,
+  );
 
   return (
     <div className="relative">
@@ -72,7 +74,6 @@ const CurrencySelector = ({ onCurrencyChange }: CurrencySelectorProps) => {
 
       {isOpen && (
         <>
-          {/* Backdrop to close dropdown */}
           <div
             className="fixed inset-0 z-10"
             onClick={() => setIsOpen(false)}
@@ -85,7 +86,9 @@ const CurrencySelector = ({ onCurrencyChange }: CurrencySelectorProps) => {
                 key={currency.code}
                 onClick={() => handleCurrencyChange(currency.code)}
                 className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 transition-colors flex items-center justify-between ${
-                  currency.code === selectedCurrency ? "bg-purple-50 text-[#6041B1]" : ""
+                  currency.code === selectedCurrency
+                    ? "bg-purple-50 text-[#6041B1]"
+                    : ""
                 }`}
               >
                 <div className="flex items-center gap-2">
