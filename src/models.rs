@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Product identifiers used for matching across sites.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ProductIdentifiers {
     /// Universal Product Code
     pub upc: Option<String>,
@@ -37,6 +37,7 @@ pub struct ProductMatchRequest {
     /// Product URL from the current page
     pub url: Option<String>,
     /// Product identifiers
+    #[serde(default)]
     pub identifiers: ProductIdentifiers,
 }
 
