@@ -1,19 +1,26 @@
-import { mockPriceData } from "@/data/data";
 import LinkIcon from "../icons/link";
 import MotorcycleIcon from "../icons/motorcycle";
 import { ScrollArea } from "../ui/scroll-area";
 import type { Item } from "@/type/item";
 import { useState } from "react";
 import { useCompare } from "@/context/compare-context";
+import { Spinner } from "../tabs/spinner";
 
 interface AllItemProps {
   item: Item;
 }
 
 const AllItem = () => {
-  const { data } = useCompare();
+  const { data, isLoading } = useCompare();
   const allPrices = data?.all_prices;
-  console.log("AllTabs context data:", data);
+
+  if(isLoading){
+    return(
+      <div className="flex items-center justify-center my-5">
+        <Spinner size={20}/>
+      </div>
+    )
+  }
   return (
     <ScrollArea className="h-[50vh] mb-3.5">
       <div className="flex flex-col">
