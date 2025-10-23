@@ -7,7 +7,7 @@ import { getCurrencyPreference } from "./utils/storage";
 import { getExchangeRates, convertFromUSDSync } from "./utils/currency";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+  import.meta.env.VITE_API_BASE_URL || "https://price-checker-extension.onrender.com/api/";
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 interface CachedResult {
