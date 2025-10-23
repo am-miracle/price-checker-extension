@@ -2,80 +2,70 @@
 
 import React from "react";
 import SearchIcon from "./icons/search";
-import CloseIcon from "./icons/x";
 import TabSection from "./tab-section";
-import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
-import type { CompareResponse } from "@/type/item";
-import { CompareProvider } from "@/context/compare-context";
+import CurrencySelector from "./currency-selector";
+import type { PriceComparisonResult, ProductMatchRequest } from "@/type/item";
 
+interface FloatingCardProps {
+  priceData: {
+    data: PriceComparisonResult | null;
+    loading: boolean;
+    error: string | null;
+    isSupported: boolean;
+    currentSite: string | null;
+    extractedProduct: ProductMatchRequest | null;
+    refresh: () => Promise<void>;
+  };
+}
 
-const fetchComparison = async (title: string): Promise<CompareResponse> => {
-  const response = await axios.get("https://price-checker-extension.onrender.com/api/compare", {
-    params: { title, item: "laptop" },
-  });
-  return response.data;
-};
+const FloatingCard = ({ priceData }: FloatingCardProps) => {
+  const [searchQuery, setSearchQuery] = React.useState("");
 
-const FloatingCard = () => {
-  const [isOpen, setIsOpen] = React.useState(true);
-  const [query, setQuery] = React.useState("laptop");
-  const [searchTerm, setSearchTerm] = React.useState("laptop");
-
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["compare", searchTerm],
-    queryFn: () => fetchComparison(searchTerm),
-    enabled: !!searchTerm,
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!query.trim()) return;
-    setSearchTerm(query.trim());
+  const handleCurrencyChange = () => {
+    // Trigger price refresh with new currency
+    priceData.refresh();
   };
 
   return (
-    <>
-      {isOpen && (
-        <div className="absolute lg:right-20 top-10 border border-[#E0E0E0] rounded-xl shadow-lg w-full lg:w-[390px] bg-white">
-          {/* Header */}
-          <div className="bg-[#F8F4FF] flex flex-col gap-y-2.5 p-3 rounded-t-xl">
-            <div className="flex items-center justify-between">
-              <p className="text-[#0D0D0D] font-medium text-2xl leading-9">
-                Universal Price Checker
+    <div className="w-full h-full flex flex-col bg-white">
+      <div className="bg-[#F8F4FF] flex flex-col gap-y-2.5 p-4 border-b border-[#E0E0E0]">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-col flex-1 min-w-0">
+            <p className="text-[#0D0D0D] font-semibold text-xl leading-7">
+              Price Checker
+            </p>
+            {priceData.extractedProduct && (
+              <p className="text-xs text-[#666666] truncate">
+                {priceData.extractedProduct.title}
               </p>
-              <button
-                className="border border-[#666666] h-5 w-5 flex items-center justify-center rounded-sm"
-                onClick={() => setIsOpen(false)}
-              >
-                <CloseIcon size={12} color="#666666" />
-              </button>
-            </div>
-
-            {/* Search Input */}
-            <form
-              onSubmit={handleSubmit}
-              className="border border-[#E0E0E0] flex items-center gap-x-2.5 py-1.5 px-2.5 rounded-lg bg-transparent"
-            >
-              <SearchIcon size={16} color="#666666" />
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search products..."
-                className="w-full outline-none text-sm bg-transparent placeholder:text-gray-400 font-normal leading-5"
-              />
-            </form>
+            )}
           </div>
-
-
-          {/* Provide compare data via context */}
-          <CompareProvider value={{ data, isLoading, isError }}>
-            <TabSection />
-          </CompareProvider>
+          <div className="flex items-center gap-2 shrink-0">
+            <CurrencySelector onCurrencyChange={handleCurrencyChange} />
+            {priceData.currentSite && (
+              <div className="px-2 py-1 bg-[#6041B1] rounded text-white text-xs font-medium uppercase">
+                {priceData.currentSite}
+              </div>
+            )}
+          </div>
         </div>
-      )}
-    </>
+
+        <div className="border border-[#E0E0E0] flex items-center gap-x-2.5 py-2 px-3 rounded-lg bg-white">
+          <SearchIcon size={16} color="#666666" />
+          <input
+            type="text"
+            placeholder="Filter results..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full outline-none text-sm bg-transparent placeholder:text-gray-400 font-normal"
+          />
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-hidden">
+        <TabSection priceData={priceData} searchQuery={searchQuery} />
+      </div>
+    </div>
   );
 };
 

@@ -67,6 +67,34 @@ cargo test -- --nocapture
 cargo test test_parse_price
 ```
 
+## Observability and Monitoring
+
+This project includes a comprehensive observability stack with Prometheus metrics, structured logging, and Grafana dashboards.
+
+### Quick Start
+
+```bash
+# Start full stack with observability
+docker-compose up -d
+
+# Access dashboards
+# Application: http://localhost:8080
+# Prometheus: http://localhost:9090
+# Grafana: http://localhost:3000 (admin/admin)
+# Metrics: http://localhost:8080/metrics
+```
+
+### Key Metrics
+
+- **HTTP Request Rate & Duration**: Track API performance
+- **Price Comparisons**: Monitor comparison requests and cache hit rates
+- **Scraper Activity**: Per-site scraping success rates and duration
+- **Database Performance**: Query latencies and connection pool stats
+- **Cache Operations**: Redis hit/miss rates
+- **Currency Conversions**: Track conversion activity
+
+For detailed information, see [OBSERVABILITY.md](./OBSERVABILITY.md)
+
 ## Development
 
 ### Code Quality

@@ -144,6 +144,8 @@ pub async fn fetch_amazon_product(
         price,
         currency: currency.code().to_string(),
         price_usd,
+        price_converted: None,
+        target_currency: None,
         link,
         image: product.image,
         match_confidence: Some(100), // ASIN is exact match
@@ -172,7 +174,29 @@ pub async fn search_product(
     let html = scrape_url(client, config, search_url, true).await?;
     let document = Html::parse_document(&html);
 
-    extract_first_product(&document, selectors)
+    // Extract base URL for converting relative links to absolute
+    let base_url = extract_base_url(search_url)?;
+
+    extract_first_product(&document, selectors, &base_url)
+}
+
+/// Extracts the base URL from a full URL (e.g., "https://www.jumia.com.ng/...")
+/// Returns "eg: https://www.jumia.com.ng"
+fn extract_base_url(url: &str) -> Result<String, AppError> {
+    // Find the position after the scheme (http:// or https://)
+    let scheme_end = url
+        .find("://")
+        .ok_or_else(|| AppError::Internal("Invalid URL: no scheme found".to_string()))?;
+
+    let after_scheme = &url[scheme_end + 3..];
+
+    // Find the end of the host (first '/' or '?' after scheme)
+    let host_end = after_scheme
+        .find('/')
+        .or_else(|| after_scheme.find('?'))
+        .unwrap_or(after_scheme.len());
+
+    Ok(url[..scheme_end + 3 + host_end].to_string())
 }
 
 /// CSS selectors for extracting product data from search results.
@@ -189,6 +213,7 @@ pub struct ProductSelectors {
 fn extract_first_product(
     document: &Html,
     selectors: &ProductSelectors,
+    base_url: &str,
 ) -> Result<SitePrice, AppError> {
     let container_selector = Selector::parse(&selectors.container)
         .map_err(|e| AppError::Internal(format!("Invalid container selector: {}", e)))?;
@@ -233,13 +258,33 @@ fn extract_first_product(
         .select(&link_selector)
         .next()
         .and_then(|el| el.value().attr("href"))
-        .ok_or_else(|| AppError::MissingField("Product link".to_string()))?
-        .to_string();
+        .ok_or_else(|| AppError::MissingField("Product link".to_string()))?;
+
+    // Convert relative link to absolute URL
+    let link = if link.starts_with("http://") || link.starts_with("https://") {
+        link.to_string()
+    } else {
+        format!(
+            "{}{}",
+            base_url,
+            if link.starts_with('/') {
+                link
+            } else {
+                &format!("/{}", link)
+            }
+        )
+    };
 
     let image = container
         .select(&image_selector)
         .next()
-        .and_then(|el| el.value().attr("src"))
+        .and_then(|el| {
+            // Try data-src first (for lazy-loaded images), then fall back to src
+            el.value()
+                .attr("data-src")
+                .filter(|src| !src.contains("data:image/svg") && !src.is_empty())
+                .or_else(|| el.value().attr("src"))
+        })
         .map(|s| s.to_string());
 
     Ok(SitePrice {
@@ -248,6 +293,8 @@ fn extract_first_product(
         price,
         currency: currency.code().to_string(),
         price_usd,
+        price_converted: None,
+        target_currency: None,
         link,
         image,
         match_confidence: Some(70), // Search-based match has lower confidence

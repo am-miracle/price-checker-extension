@@ -3,25 +3,27 @@
 //! Sets up the Axum HTTP server with tracing, graceful shutdown,
 //! and all API routes.
 
-use price_checker_extension::{AppState, Config, cache, db, routes, utils};
+use axum::middleware;
+use price_checker_extension::{cache, db, observability, routes, utils, AppState, Config};
 use std::{net::SocketAddr, sync::Arc};
 use tokio::signal;
 use tower_http::{cors::CorsLayer, trace::TraceLayer};
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load environment variables from .env file
     dotenvy::dotenv().ok();
 
-    // Initialize tracing subscriber for structured logging
-    tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "info,price_checker_extension=debug".into()),
-        )
-        .with(tracing_subscriber::fmt::layer())
-        .init();
+    // Initialize rustls crypto provider (required for HTTPS requests)
+    // This must be called before any HTTPS connections are made
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .map_err(|_| "Failed to install rustls crypto provider")?;
+
+    // Initialize observability (tracing and metrics)
+    observability::init_tracing()?;
+    observability::init_metrics();
+    let metrics_handle = routes::setup_metrics_recorder();
 
     tracing::info!("Starting Price Checker Extension");
 
@@ -66,7 +68,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing::info!("Application state initialized");
 
     // Create application router with middleware
-    let app = routes::create_router(state)
+    let app = routes::create_router(state, metrics_handle)
+        .layer(middleware::from_fn(observability::track_metrics))
         .layer(TraceLayer::new_for_http())
         .layer(CorsLayer::permissive());
 
@@ -86,6 +89,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     tracing::info!("Server shutdown complete");
+
+    // Shutdown tracing to flush remaining spans
+    observability::tracing_setup::shutdown_tracing();
 
     Ok(())
 }

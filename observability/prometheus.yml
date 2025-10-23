@@ -1,0 +1,24 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'price-checker-monitor'
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'price-checker-api'
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['app:8080']
+        labels:
+          service: 'price-checker'
+          env: 'development'
+    metric_relabel_configs:
+      # Keep all our custom metrics
+      - source_labels: [__name__]
+        regex: '(http_requests_total|http_request_duration_seconds|price_comparisons_total|scraper_requests_total|database_query_duration_seconds|cache_operations_total|currency_conversions_total|active_scraper_tasks|price_alerts_triggered_total).*'
+        action: keep

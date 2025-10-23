@@ -1,12 +1,21 @@
 import TrackedItem from "../items/tracked-item";
-import { useCompare } from "@/context/compare-context";
+import { useTrackedProducts } from "@/hooks/useTrackedProducts";
 
-const TrackedTabs = () => {
-  const { data, isLoading, isError } = useCompare();
-  console.log("TrackedTabs context data:", data, { isLoading, isError });
+interface TrackedTabsProps {
+  searchQuery: string;
+}
+
+const TrackedTabs = ({ searchQuery }: TrackedTabsProps) => {
+  const { products, loading, removeTrackedProduct } = useTrackedProducts();
+
   return (
-    <div>
-      <TrackedItem />
+    <div className="h-full">
+      <TrackedItem
+        products={products}
+        loading={loading}
+        onRemove={removeTrackedProduct}
+        searchQuery={searchQuery}
+      />
     </div>
   );
 };
