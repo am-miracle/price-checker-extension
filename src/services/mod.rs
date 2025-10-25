@@ -167,6 +167,9 @@ pub async fn compare_with_identifiers(
         all_prices = convert_prices_to_currency(all_prices, target_curr, state).await?;
     }
 
+    // Validate and filter out price outliers
+    all_prices = validate_and_filter_prices(all_prices);
+
     // Sort by price ascending (lowest price first)
     all_prices.sort_by(|a, b| {
         a.price_usd
@@ -234,6 +237,81 @@ async fn convert_prices_to_currency(
     }
 
     Ok(prices)
+}
+
+/// Validates prices and filters out obvious outliers.
+///
+/// Uses statistical methods to detect and remove prices that are
+/// unrealistically high or low compared to the median.
+///
+/// # Arguments
+/// * `prices` - Vector of site prices to validate
+///
+/// # Returns
+/// * Filtered vector with outliers removed
+fn validate_and_filter_prices(mut prices: Vec<SitePrice>) -> Vec<SitePrice> {
+    if prices.len() < 3 {
+        return prices; // Not enough data for outlier detection
+    }
+
+    // Calculate median price for outlier detection
+    let mut price_values: Vec<rust_decimal::Decimal> = prices.iter().map(|p| p.price_usd).collect();
+    price_values.sort();
+
+    let median = if price_values.len() % 2 == 0 {
+        let mid = price_values.len() / 2;
+        (price_values[mid - 1] + price_values[mid]) / rust_decimal::Decimal::from(2)
+    } else {
+        price_values[price_values.len() / 2]
+    };
+
+    // Calculate MAD (Median Absolute Deviation)
+    let mut deviations: Vec<rust_decimal::Decimal> =
+        price_values.iter().map(|&p| (p - median).abs()).collect();
+    deviations.sort();
+
+    let mad = if deviations.len() % 2 == 0 {
+        let mid = deviations.len() / 2;
+        (deviations[mid - 1] + deviations[mid]) / rust_decimal::Decimal::from(2)
+    } else {
+        deviations[deviations.len() / 2]
+    };
+
+    // Filter outliers: keep prices within 3 * MAD from median
+    // Also reject prices that are unrealistically low (< $1) or high (> $1,000,000)
+    let threshold = rust_decimal::Decimal::from(3) * mad;
+    let min_price = rust_decimal::Decimal::from(1);
+    let max_price = rust_decimal::Decimal::from(1_000_000);
+
+    let original_count = prices.len();
+    prices.retain(|p| {
+        let deviation = (p.price_usd - median).abs();
+        let is_reasonable = p.price_usd >= min_price && p.price_usd <= max_price;
+        let is_not_outlier = deviation <= threshold;
+
+        if !is_reasonable || !is_not_outlier {
+            tracing::warn!(
+                site = %p.site,
+                price = %p.price_usd,
+                median = %median,
+                deviation = %deviation,
+                threshold = %threshold,
+                "Filtering out price outlier"
+            );
+        }
+
+        is_reasonable && is_not_outlier
+    });
+
+    if prices.len() < original_count {
+        tracing::info!(
+            removed = original_count - prices.len(),
+            remaining = prices.len(),
+            "Filtered price outliers"
+        );
+    }
+
+    prices
 }
 
 /// Simple price comparison using just a search query (backward compatibility).

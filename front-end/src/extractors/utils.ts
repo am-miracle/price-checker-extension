@@ -73,7 +73,15 @@ export function getTextContent(
   element: Element | null | undefined,
 ): string | undefined {
   const text = element?.textContent?.trim();
-  return text ? text : undefined;
+  if (!text) return undefined;
+
+  // Remove zero-width characters, excessive whitespace, and normalize
+  const cleaned = text
+    .replace(/[\u200B-\u200D\uFEFF]/g, "") // Remove zero-width chars
+    .replace(/\s+/g, " ") // Collapse multiple spaces
+    .trim();
+
+  return cleaned || undefined;
 }
 
 // Extract attribute from element with null safety
@@ -115,13 +123,32 @@ export function extractFromTable(
   const rows = document.querySelectorAll(tableSelector);
 
   for (const row of rows) {
-    const keyCell = row.querySelector("th, td:first-child");
-    const valueCell = row.querySelector("td:last-child");
+    // Try table row format (th/td)
+    const keyCell = row.querySelector("th, td:first-child, .a-span3, .label");
+    const valueCell = row.querySelector("td:last-child, .a-span9, .value");
 
-    const keyText = keyCell?.textContent?.trim().toLowerCase() || "";
+    let keyText = keyCell?.textContent?.trim().toLowerCase() || "";
+
+    // For list items, the whole text might be "Key : Value"
+    if (!valueCell && row.tagName === "LI") {
+      const fullText = row.textContent || "";
+      const parts = fullText.split(/[:\-]/);
+      if (parts.length >= 2) {
+        keyText = parts[0].trim().toLowerCase();
+        const valueText = parts.slice(1).join(":").trim();
+
+        if (keyPattern.test(keyText)) {
+          return valueText;
+        }
+      }
+    }
 
     if (keyPattern.test(keyText)) {
-      return getTextContent(valueCell);
+      const value = getTextContent(valueCell);
+      if (value) {
+        // Clean up common patterns like "Product : 123456" -> "123456"
+        return value.replace(/^[:\-\s]+/, "").trim();
+      }
     }
   }
 
@@ -131,7 +158,7 @@ export function extractFromTable(
 // Shorten title
 export function shortenTitle(
   title: string | undefined,
-  maxWords: number = 2,
+  maxWords: number = 7,
 ): string | undefined {
   if (!title) return undefined;
 

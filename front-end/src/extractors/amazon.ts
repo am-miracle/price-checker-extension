@@ -78,18 +78,21 @@ export function extractAmazonProduct(): ProductMatchRequest | null {
 
     console.log("[Amazon Extractor] Model Number:", modelNumber);
 
-    // Extract UPC/EAN/GTIN from product details
-    const upc = extractFromTable(
-      "#productDetails_detailBullets_sections1 tr, .prodDetTable tr",
-      /^upc$/i,
-    );
+    // Extract UPC/EAN/GTIN from product details (try multiple locations)
+    const upc =
+      extractFromTable(
+        "#productDetails_detailBullets_sections1 tr, .prodDetTable tr, #detailBullets_feature_div li, #productDetails_techSpec_section_1 tr",
+        /^upc$|upc\s*:|universal product code/i,
+      ) || extractFromTable("#detailBulletsWrapper_feature_div ul li", /upc/i);
+
     const ean = extractFromTable(
-      "#productDetails_detailBullets_sections1 tr, .prodDetTable tr",
-      /^ean$/i,
+      "#productDetails_detailBullets_sections1 tr, .prodDetTable tr, #detailBullets_feature_div li, #productDetails_techSpec_section_1 tr",
+      /^ean$|ean\s*:|european article number/i,
     );
+
     const gtin = extractFromTable(
-      "#productDetails_detailBullets_sections1 tr, .prodDetTable tr",
-      /gtin/i,
+      "#productDetails_detailBullets_sections1 tr, .prodDetTable tr, #detailBullets_feature_div li",
+      /gtin|global trade item/i,
     );
 
     console.log("[Amazon Extractor] UPC:", upc, "EAN:", ean, "GTIN:", gtin);

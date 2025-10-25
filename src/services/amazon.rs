@@ -3,15 +3,12 @@
 //! Uses ZenRows E-Commerce API for Amazon product scraping.
 //! Supports ASIN-based lookups and search queries.
 
-use super::zenrows::{ProductSelectors, ZenRowsConfig, fetch_amazon_product, search_product};
-use crate::{AppError, ProductIdentifiers, SitePrice, config::AmazonConfig};
+use super::zenrows::{fetch_amazon_product, search_product, ProductSelectors, ZenRowsConfig};
+use crate::{config::AmazonConfig, AppError, ProductIdentifiers, SitePrice};
 use reqwest::Client;
 
 /// Fetches price information for a product from Amazon.
 ///
-/// Priority order:
-/// 1. If ASIN is provided, use ZenRows E-Commerce API (exact match)
-/// 2. Otherwise, search Amazon using ZenRows Universal API
 ///
 /// # Arguments
 /// * `identifiers` - Product identifiers (ASIN preferred)
@@ -44,7 +41,6 @@ pub async fn fetch_price(
         )
     })?;
 
-    // Priority 1: Use ASIN for exact match
     if let Some(asin) = &identifiers.asin {
         tracing::info!(asin = %asin, "Using ASIN for Amazon lookup");
         match fetch_amazon_product(client, zenrows, asin).await {

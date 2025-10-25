@@ -28,11 +28,34 @@ impl ZenRowsConfig {
 /// ZenRows E-Commerce API response for Amazon products.
 #[derive(Debug, Deserialize)]
 pub struct AmazonProductResponse {
+    #[serde(alias = "product_name")]
     pub title: Option<String>,
+    #[serde(alias = "price_string")]
     pub price: Option<String>,
-    pub image: Option<String>,
+    #[serde(alias = "product_images")]
+    pub image: Option<Vec<String>>,
     pub product_url: Option<String>,
+    #[serde(alias = "sku")]
     pub asin: Option<String>,
+
+    // Additional fields from ZenRows API
+    pub product_description: Option<String>,
+    pub category_breadcrumb: Option<Vec<String>>,
+    pub rating_score: Option<f64>,
+    pub review_count: Option<u32>,
+    pub availability_status: Option<String>,
+    pub is_available: Option<bool>,
+
+    // Product details that may contain UPC/EAN/Model
+    pub product_dimensions: Option<String>,
+    pub product_weight: Option<String>,
+    pub model_number: Option<String>,
+    pub brand: Option<String>,
+
+    // Pricing details
+    pub price_currency_symbol: Option<String>,
+    pub list_price: Option<String>,
+    pub savings_amount: Option<String>,
 }
 
 /// Scrapes a URL using ZenRows Universal Scraper API.
@@ -122,6 +145,17 @@ pub async fn fetch_amazon_product(
         .await
         .map_err(|e| AppError::Parse(format!("Failed to parse Amazon response: {}", e)))?;
 
+    tracing::debug!(
+        asin = %asin,
+        title = ?product.title,
+        brand = ?product.brand,
+        model = ?product.model_number,
+        rating = ?product.rating_score,
+        reviews = ?product.review_count,
+        available = ?product.is_available,
+        "ZenRows Amazon API response"
+    );
+
     let title = product
         .title
         .ok_or_else(|| AppError::MissingField("Amazon product title".to_string()))?;
@@ -138,6 +172,28 @@ pub async fn fetch_amazon_product(
         .product_url
         .unwrap_or_else(|| format!("https://www.amazon.com/dp/{}", asin));
 
+    // Get first image from array if available
+    let image = product.image.and_then(|images| images.into_iter().next());
+
+    // Validate product is available and price is reasonable
+    if let Some(false) = product.is_available {
+        tracing::warn!(
+            asin = %asin,
+            status = ?product.availability_status,
+            "Product not available"
+        );
+    }
+
+    // Log quality indicators
+    if let (Some(rating), Some(reviews)) = (product.rating_score, product.review_count) {
+        tracing::info!(
+            asin = %asin,
+            rating = rating,
+            reviews = reviews,
+            "Amazon product quality indicators"
+        );
+    }
+
     Ok(SitePrice {
         site: "Amazon".to_string(),
         title,
@@ -147,7 +203,7 @@ pub async fn fetch_amazon_product(
         price_converted: None,
         target_currency: None,
         link,
-        image: product.image,
+        image,
         match_confidence: Some(100), // ASIN is exact match
     })
 }
@@ -286,6 +342,16 @@ fn extract_first_product(
                 .or_else(|| el.value().attr("src"))
         })
         .map(|s| s.to_string());
+
+    tracing::info!(
+        site = "Search result",
+        title = %title,
+        price = %price,
+        currency = %currency.code(),
+        price_usd = %price_usd,
+        link = %link,
+        "Extracted product from search results"
+    );
 
     Ok(SitePrice {
         site: "Unknown".to_string(),
